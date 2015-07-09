@@ -1,32 +1,26 @@
-def run():
-    while True:
-        pass
-
-import threading
-t = threading.Thread(target=run)
-t.start()
-
-import sys
 import _snakemeter
 
+class Sampler(object):
+    def __init__(self):
+        pass
+
+    def start(self):
+        _snakemeter.start_sampling()
+
+    def stop(self):
+        _snakemeter.stop_sampling()
+
+    def reset(self):
+        _snakemeter.reset_sampling()
+
+    def get_stats(self):
+        stats = _snakemeter.get_sampling_stats()
+        return interpret_stats(stats)
 
 
-_snakemeter.print_version()
+class Stats(object):
+    pass
 
-print_stacktrace = _snakemeter.print_stacktrace
+def interpret_stats(stats):
+    return Stats()
 
-print_stacktrace()
-
-print('Python:\n')
-print(sys._current_frames().__len__())
-for (k, v) in sys._current_frames().items():
-    print (k)
-    print (v)
-    print('lineno = %d' % v.f_lineno)
-
-    f = v
-    while f is not None:
-        print("%s:%d %s"%(f.f_code.co_filename, f.f_lineno, f.f_code.co_name))
-        f = f.f_back
-
-    # print(get_version())

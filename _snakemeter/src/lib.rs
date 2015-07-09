@@ -5,7 +5,7 @@
 #[macro_use] extern crate cpython;
 
 
-use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString, PyFrame, ObjectProtocol, PyObject, PyResult};
+use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString, PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject};
 
 extern crate libc;
 
@@ -17,6 +17,7 @@ use std::cmp::Ordering;
 py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
     try!(m.add("print_version", py_fn!(print_version)));
+    try!(m.add("current_frames_count", py_fn!(current_frames_count)));
     try!(m.add("print_stacktrace", py_fn!(print_stacktrace)));
     Ok(())
 });
@@ -26,6 +27,13 @@ pub fn print_version<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyO
     let version: String = sys.get("version").unwrap().extract().unwrap();
     println!("Hello Python {}", version);
     Ok(py.None())
+}
+
+pub fn current_frames_count<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
+    let sys = py.import("sys").unwrap();
+    let frames_dict: PyDict = sys.call("_current_frames", NoArgs, None).unwrap().extract().unwrap();
+    let frames_count = frames_dict.items().len();
+    Ok(frames_count.to_py_object(py))
 }
 
 
