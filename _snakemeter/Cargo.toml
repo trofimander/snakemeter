@@ -1,0 +1,23 @@
+[package]
+name = "_snakemeter"
+version = "0.1.0"
+authors = ["Dmitry Trofimov <dmitry.trofimov@jetbrains.com>"]
+
+[lib]
+name = "_snakemeter"
+crate-type = ["rlib"]
+
+[dependencies.cpython]
+path = "../../rust-cpython"
+features = ["python27-sys"]
+
+#[dependencies.python27-sys]
+#path = "../../rust-cpython/python27-sys"
+#features = ["python-2-7"]
+
+# do not include the default features, and optionally
+# cherry-pick individual features
+default-features = false
+
+[dependencies.interpolate_idents]
+git = "https://github.com/SkylerLipthay/interpolate_idents.git"
