@@ -12,7 +12,7 @@ extern crate libc;
 use libc::c_char;
 use std::ffi::CStr;
 use std::str;
-
+use std::cmp::Ordering;
 
 py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
@@ -50,14 +50,12 @@ pub fn print_stacktrace<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, 
 
             match value {
                 Some(frame) => {
-                    println!("{}", frame);
-
                     let code = frame.getattr("f_code").unwrap();
                     println!("{}:{} {}", code.getattr("co_filename").unwrap(), frame.getattr("f_lineno").unwrap(),
                     code.getattr("co_name").unwrap());
 
                     match frame.getattr("f_back") {
-                            Ok(f) => if f ==  { value = None } else {value = Some(f)},
+                            Ok(f) => if f.compare(py.None()).unwrap() == Ordering::Equal { value = None } else {value = Some(f)},
                             Err(err) => {err.print(); value = None }
                         };
 
@@ -66,9 +64,6 @@ pub fn print_stacktrace<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, 
 
                 }
         }
-
-
-
     }
 
     println!("Dict size = {}", frames_dict.len());
