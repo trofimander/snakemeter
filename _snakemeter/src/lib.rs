@@ -50,7 +50,8 @@ pub fn current_frames_count<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<
 pub fn start_sampling<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
     let sampler_object = args.get_item(0);
     let rate = unsafe {args.get_item(1).unchecked_cast_into::<PyInt>().value()};
-    let sampler = Sampler::new(rate as u64);
+    let sampler = Sampler::init(rate as u64);
+
 
     // sampler_object.add_attr("_sampler", ); TODO: add sampler to python object
 

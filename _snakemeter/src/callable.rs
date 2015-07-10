@@ -3,7 +3,7 @@ use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
 
 
-enum SampleType {
+pub enum SampleType {
     SelfSample, CumulativeSample
 }
 
@@ -14,8 +14,8 @@ pub struct Callable {
 }
 
 impl Callable {
-    fn new(path: &str, name: &str) -> Callable {
-        Callable { path: path.to_string(), name: name.to_string() }
+    pub fn new(path: String, name: String) -> Callable {
+        Callable { path: path, name: name }
     }
 }
 
