@@ -1,11 +1,11 @@
 import _snakemeter
 
 class Sampler(object):
-    def __init__(self):
-        pass
+    def __init__(self, rate=1000):
+        self.rate = rate
 
     def start(self):
-        _snakemeter.start_sampling()
+        _snakemeter.start_sampling(self.rate)
 
     def stop(self):
         _snakemeter.stop_sampling()

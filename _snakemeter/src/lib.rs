@@ -3,9 +3,16 @@
 #![plugin(interpolate_idents)]
 
 #[macro_use] extern crate cpython;
+extern crate mio;
+extern crate clock_ticks;
 
 
-use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString, PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject};
+mod callable;
+mod sampler;
+
+
+use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
+    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt};
 
 extern crate libc;
 
@@ -14,11 +21,14 @@ use std::ffi::CStr;
 use std::str;
 use std::cmp::Ordering;
 
+use sampler::Sampler;
+
 py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
     try!(m.add("print_version", py_fn!(print_version)));
     try!(m.add("current_frames_count", py_fn!(current_frames_count)));
     try!(m.add("print_stacktrace", py_fn!(print_stacktrace)));
+    try!(m.add("start_sampling", py_fn!(start_sampling)));
     Ok(())
 });
 
@@ -34,6 +44,12 @@ pub fn current_frames_count<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<
     let frames_dict: PyDict = sys.call("_current_frames", NoArgs, None).unwrap().extract().unwrap();
     let frames_count = frames_dict.items().len();
     Ok(frames_count.to_py_object(py))
+}
+
+pub fn start_sampling<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
+    let rate = unsafe {args.get_item(0).unchecked_cast_into::<PyInt>().value()};
+    let sampler = Sampler::new(rate as u64);
+    Ok(py.None())
 }
 
 

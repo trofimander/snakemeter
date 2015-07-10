@@ -7,6 +7,7 @@ authors = ["Dmitry Trofimov <dmitry.trofimov@jetbrains.com>"]
 name = "_snakemeter"
 crate-type = ["dylib"]
 
+
 [dependencies.cpython]
 path = "../../rust-cpython"
 features = ["python27-sys"]
@@ -21,3 +22,7 @@ default-features = false
 
 [dependencies.interpolate_idents]
 git = "https://github.com/SkylerLipthay/interpolate_idents.git"
+
+[dependencies.mio]
+
+[dependencies.clock_ticks]
