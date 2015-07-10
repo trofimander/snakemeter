@@ -5,16 +5,16 @@ class Sampler(object):
         self.rate = rate
 
     def start(self):
-        _snakemeter.start_sampling(self.rate)
+        _snakemeter.start_sampling(self, self.rate)
 
     def stop(self):
-        _snakemeter.stop_sampling()
+        _snakemeter.stop_sampling(self)
 
     def reset(self):
-        _snakemeter.reset_sampling()
+        _snakemeter.reset_sampling(self)
 
     def get_stats(self):
-        stats = _snakemeter.get_sampling_stats()
+        stats = _snakemeter.get_sampling_stats(self)
         return interpret_stats(stats)
 
 

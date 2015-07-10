@@ -9,6 +9,7 @@ extern crate clock_ticks;
 
 mod callable;
 mod sampler;
+mod pyframe;
 
 
 use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
@@ -47,8 +48,12 @@ pub fn current_frames_count<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<
 }
 
 pub fn start_sampling<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
-    let rate = unsafe {args.get_item(0).unchecked_cast_into::<PyInt>().value()};
+    let sampler_object = args.get_item(0);
+    let rate = unsafe {args.get_item(1).unchecked_cast_into::<PyInt>().value()};
     let sampler = Sampler::new(rate as u64);
+
+    // sampler_object.add_attr("_sampler", ); TODO: add sampler to python object
+
     Ok(py.None())
 }
 
