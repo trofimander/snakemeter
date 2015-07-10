@@ -13,7 +13,7 @@ mod pyframe;
 
 
 use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
-    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt};
+    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt, PyRustTypeBuilder, PyRustObject};
 
 extern crate libc;
 
@@ -21,6 +21,7 @@ use libc::c_char;
 use std::ffi::CStr;
 use std::str;
 use std::cmp::Ordering;
+use std::sync::{Arc, Mutex};
 
 use sampler::Sampler;
 
@@ -28,8 +29,9 @@ py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
     try!(m.add("print_version", py_fn!(print_version)));
     try!(m.add("current_frames_count", py_fn!(current_frames_count)));
-    try!(m.add("print_stacktrace", py_fn!(print_stacktrace)));
     try!(m.add("start_sampling", py_fn!(start_sampling)));
+    try!(m.add("stop_sampling", py_fn!(stop_sampling)));
+    try!(m.add("get_sampling_stats", py_fn!(get_sampling_stats)));
     Ok(())
 });
 
@@ -52,51 +54,43 @@ pub fn start_sampling<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, Py
     let rate = unsafe {args.get_item(1).unchecked_cast_into::<PyInt>().value()};
     let sampler = Sampler::init(rate as u64);
 
+    let t = PyRustTypeBuilder::<Arc<Mutex<Sampler>>>::new(py, "Sampler").finish().unwrap();
 
-    // sampler_object.add_attr("_sampler", ); TODO: add sampler to python object
+    let inst = t.create_instance(sampler, ());
+
+    sampler_object.setattr("_sampler", inst);
 
     Ok(py.None())
 }
 
+pub fn stop_sampling<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
+    let sampler_object = args.get_item(0);
 
-pub fn print_stacktrace<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
-    let sys = py.import("sys").unwrap();
-    let frames_dict: PyDict = sys.call("_current_frames", NoArgs, None).unwrap().extract().unwrap();
-    let frames = frames_dict.items();
+    let sampler = get_sampler(sampler_object);
 
+    let mut lock = sampler.lock().unwrap();
 
-    for x in frames.into_iter() {
-        let tuple = unsafe {x.unchecked_cast_into::<PyTuple>()};
-        let key = tuple.get_item(0);
-//        let value = tuple.get_item(1).unchecked_cast_into::<PyFrame>();
-        let value = tuple.get_item(1);
-
-        println!("key = {}", key);
-        println!("value = {}", value);
-        println!("lineno = {}", value.getattr("f_lineno").unwrap());
-        let mut value:Option<PyObject> = Some(value);
-
-        loop {
-
-            match value {
-                Some(frame) => {
-                    let code = frame.getattr("f_code").unwrap();
-                    println!("{}:{} {}", code.getattr("co_filename").unwrap(), frame.getattr("f_lineno").unwrap(),
-                    code.getattr("co_name").unwrap());
-
-                    match frame.getattr("f_back") {
-                            Ok(f) => if f.compare(py.None()).unwrap() == Ordering::Equal { value = None } else {value = Some(f)},
-                            Err(err) => {err.print(); value = None }
-                        };
-
-                },
-                None => break
-
-                }
-        }
-    }
-
-    println!("Dict size = {}", frames_dict.len());
+    lock.stop();
 
     Ok(py.None())
+}
+
+pub fn get_sampling_stats<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p, PyObject<'p>> {
+    let sampler_object = args.get_item(0);
+
+    let sampler = get_sampler(sampler_object);
+
+    let mut lock = sampler.lock().unwrap();
+
+    let list = lock.statistics();
+
+    let mut boxed_slice = list.into_boxed_slice();
+
+    Ok(ToPyObject::to_py_object(&mut *boxed_slice, py).into_object())
+}
+
+fn get_sampler(obj: PyObject) -> Arc<Mutex<Sampler>> {
+    let pyobj = obj.getattr("_sampler").unwrap();
+    let r: PyRustObject<Arc<Mutex<Sampler>>, PyObject> = unsafe {PyRustObject::unchecked_downcast_from(pyobj) };
+    r.get().clone()
 }

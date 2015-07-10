@@ -12,7 +12,8 @@ pub struct Sampler {
     callable_registry: CallableRegistry,
     timestamp: u64,
     elapsed_time: u64,
-    samples_count: u64
+    samples_count: u64,
+    run: bool
 }
 
 struct SamplingTimerHandler {
@@ -27,7 +28,10 @@ impl Handler for SamplingTimerHandler {
         let now = time_ns();
         let mut lock = self.sampler.lock().unwrap();
         lock.sample(now);
-        event_loop.timeout_ms(timeout, timeout);
+        if lock.run {
+            // setup next timer
+            event_loop.timeout_ms(timeout, timeout);
+        }
     }
 }
 
@@ -37,7 +41,8 @@ impl Sampler {
             callable_registry: CallableRegistry::new(),
             timestamp: time_ns(),
             elapsed_time:0,
-            samples_count:0
+            samples_count:0,
+            run: true
         }
     }
 
@@ -67,6 +72,14 @@ impl Sampler {
 //        print_stacktrace();
 
           self.timestamp = time_ns();
+    }
+
+    pub fn stop(&mut self) {
+        self.run = false;
+    }
+
+    pub fn statistics(&mut self) -> Vec<(String, String, u64, u64)> {
+        self.callable_registry.as_tuples_list()
     }
 }
 

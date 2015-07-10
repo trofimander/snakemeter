@@ -14,8 +14,7 @@ class Sampler(object):
         _snakemeter.reset_sampling(self)
 
     def get_stats(self):
-        stats = _snakemeter.get_sampling_stats(self)
-        return interpret_stats(stats)
+        return _snakemeter.get_sampling_stats(self)
 
 
 class Stats(object):
@@ -23,4 +22,3 @@ class Stats(object):
 
 def interpret_stats(stats):
     return Stats()
-

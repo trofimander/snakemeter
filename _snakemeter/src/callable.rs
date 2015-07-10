@@ -79,4 +79,16 @@ impl CallableRegistry {
         self.id_counter= self.id_counter + 1;
         self.id_counter
     }
+
+    pub fn as_tuples_list(&mut self) -> Vec<(String, String, u64, u64)> {
+        let mut reg = self;
+        let list = reg.callable_to_id.iter().map(
+            |(callable, id)|
+            {
+                let stat = reg.callable_stats.get(id).unwrap();
+                (callable.path.clone(), callable.name.clone(), stat.cumulative_count.clone(), stat.self_count.clone())
+            }
+        );
+        list.collect::<Vec<_>>()
+    }
 }

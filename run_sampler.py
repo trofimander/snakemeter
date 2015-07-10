@@ -14,9 +14,15 @@ def run_sampling():
     t.start()
 
 
-    while True:
-        pass
+    import time
+    time.sleep(3)
 
+
+    sampler.stop()
+
+    print(sampler._sampler)
+
+    print(sampler.get_stats())
 
 
 
