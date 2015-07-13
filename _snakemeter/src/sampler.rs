@@ -78,9 +78,18 @@ impl Sampler {
         self.run = false;
     }
 
-    pub fn statistics(&mut self) -> Vec<(String, String, u64, u64)> {
-        self.callable_registry.as_tuples_list()
+    pub fn stats(&mut self) -> Stats {
+        Stats {
+            callable_stats: self.callable_registry.as_tuples_list(),
+            total_time: self.elapsed_time
+        }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Stats {
+    pub callable_stats: Vec<(String, String, u64, u64)>,
+    pub total_time: u64
 }
 
 impl ThreadProcessor for Sampler {

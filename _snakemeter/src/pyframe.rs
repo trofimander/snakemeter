@@ -78,7 +78,7 @@ pub fn iterate_stacktrace(thread_proessor: &mut ThreadProcessor) {
                     match frame.getattr("f_back") {
                             Ok(f) => if f.compare(py.None()).unwrap() == Ordering::Equal { value = None } else {value = Some(f)},
                             Err(err) => {err.print(); value = None }
-                        };
+                    };
 
                 },
                 None => break

@@ -5,7 +5,7 @@ def loop():
 def run_sampling():
     import snakemeter
 
-    sampler = snakemeter.Sampler(1)
+    sampler = snakemeter.Sampler(100)
 
     sampler.start()
 
@@ -22,7 +22,8 @@ def run_sampling():
 
     print(sampler._sampler)
 
-    print(sampler.get_stats())
+    st = sampler.get_stats()
+    print(st.callable_stats)
 
 
 

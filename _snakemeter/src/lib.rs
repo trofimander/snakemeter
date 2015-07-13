@@ -23,7 +23,7 @@ use std::str;
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use sampler::Sampler;
+use sampler::{Sampler, Stats};
 
 py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
@@ -82,11 +82,23 @@ pub fn get_sampling_stats<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p
 
     let mut lock = sampler.lock().unwrap();
 
-    let list = lock.statistics();
+    let stats = lock.stats();
 
-    let mut boxed_slice = list.into_boxed_slice();
+    let mut tb = PyRustTypeBuilder::<Stats>::new(py, "Stats");
 
-    Ok(ToPyObject::to_py_object(&mut *boxed_slice, py).into_object())
+
+    let stats2 = stats.clone();
+    let mut boxed_slice = stats2.callable_stats.into_boxed_slice();
+    let total_time = stats2.total_time;
+
+    let list: &[(String, String, u64, u64)] = & *boxed_slice;
+    tb = PyRustTypeBuilder::add(tb, "callable_stats", list);
+    tb = PyRustTypeBuilder::add(tb, "total_time", &total_time);
+
+    let stats_inst = tb.finish().unwrap().create_instance(stats, ()).into_object();
+
+
+    Ok(stats_inst)
 }
 
 fn get_sampler(obj: PyObject) -> Arc<Mutex<Sampler>> {
