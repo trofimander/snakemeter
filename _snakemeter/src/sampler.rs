@@ -1,6 +1,6 @@
 use callable::*;
 
-use mio::{EventLoop, Handler};
+use mio::{EventLoop, Handler, EventLoopConfig};
 use clock_ticks::precise_time_ns as time_ns;
 
 use pyframe::{print_stacktrace, iterate_stacktrace, ThreadProcessor, FrameProcessor};
@@ -26,6 +26,7 @@ impl Handler for SamplingTimerHandler {
 
     fn timeout(&mut self, event_loop: &mut EventLoop<SamplingTimerHandler>, timeout: u64) {
         let now = time_ns();
+
         let mut lock = self.sampler.lock().unwrap();
         lock.sample(now);
         if lock.run {
@@ -47,8 +48,17 @@ impl Sampler {
     }
 
     pub fn init(rate: u64) -> Arc<Mutex<Sampler>> {
-        let mut event_loop = EventLoop::new().unwrap();
-        let timeout_ms = 1000/rate;
+        let timeout_ms = if 1000/rate >0 {1000/rate} else {1} ;
+
+        let mut event_loop = EventLoop::configured(EventLoopConfig {
+            io_poll_timeout_ms: 1_000,
+            notify_capacity: 4_096,
+            messages_per_tick: 256,
+            timer_tick_ms: timeout_ms,
+            timer_wheel_size: 1_024,
+            timer_capacity: 65_536,
+        }).unwrap();
+
         let timeout = event_loop.timeout_ms(timeout_ms, timeout_ms).unwrap();
 
         let sampler = Arc::new(Mutex::new(Sampler::new()));
@@ -81,7 +91,8 @@ impl Sampler {
     pub fn stats(&mut self) -> Stats {
         Stats {
             callable_stats: self.callable_registry.as_tuples_list(),
-            total_time: self.elapsed_time
+            total_time: self.elapsed_time,
+            samples_count: self.samples_count
         }
     }
 }
@@ -89,7 +100,8 @@ impl Sampler {
 #[derive(Debug, Clone)]
 pub struct Stats {
     pub callable_stats: Vec<(String, String, u64, u64)>,
-    pub total_time: u64
+    pub total_time: u64,
+    pub samples_count: u64
 }
 
 impl ThreadProcessor for Sampler {
