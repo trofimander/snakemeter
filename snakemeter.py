@@ -23,7 +23,6 @@ class Sampler(object):
 def convert_to_pstats(stats):
     from collections import defaultdict
 
-
     import pstats
     class _PStatHolder:
         def __init__(self, d):
@@ -37,18 +36,13 @@ def convert_to_pstats(stats):
     _pdict = {}
 
     # convert callees to callers
-    _callers = defaultdict(dict)
-    for fs in stats:
-        for ct in fs.children:
-            _callers[ct][pstat_id(fs)] = (ct.ncall, ct.nactualcall, ct.tsub ,ct.ttot)
+    # _callers = defaultdict(dict)
+    # for fs in stats:
+    #     for ct in fs.children:
+    #         _callers[ct][pstat_id(fs)] = (ct.ncall, ct.nactualcall, ct.tsub ,ct.ttot)
 
     # populate the pstat dict.
-    for (path, ) in stats.callable_stats:
+    for (path, name, ) in stats.callable_stats:
         _pdict[pstat_id(fs)] = (fs.ncall, fs.nactualcall, fs.tsub, fs.ttot, _callers[fs], )
 
     return pstats.Stats(_PStatHolder(_pdict))
-
-
-
-def interpret_stats(stats):
-    return Stats()

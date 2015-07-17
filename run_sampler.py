@@ -5,7 +5,7 @@ def loop():
 def run_sampling():
     import snakemeter
 
-    sampler = snakemeter.Sampler(100)
+    sampler = snakemeter.Sampler(1000)
 
     sampler.start()
 

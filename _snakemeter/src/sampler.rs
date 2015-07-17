@@ -74,7 +74,7 @@ impl Sampler {
         sampler
     }
 
-    pub fn sample(&mut self, now: u64) {
+    pub fn sample(&mut self, now: u64) {    
           self.elapsed_time = self.elapsed_time + (now - self.timestamp);
           self.samples_count = self.samples_count + 1;
 
