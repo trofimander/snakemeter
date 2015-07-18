@@ -3,6 +3,7 @@
 #![plugin(interpolate_idents)]
 
 #[macro_use] extern crate cpython;
+
 extern crate mio;
 extern crate clock_ticks;
 
@@ -13,7 +14,8 @@ mod pyframe;
 
 
 use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
-    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt, PyRustTypeBuilder, PyRustObject};
+    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt, PyRustTypeBuilder, PyRustObject,
+    PyErr};
 
 extern crate libc;
 
@@ -32,6 +34,7 @@ py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("start_sampling", py_fn!(start_sampling)));
     try!(m.add("stop_sampling", py_fn!(stop_sampling)));
     try!(m.add("get_sampling_stats", py_fn!(get_sampling_stats)));
+    try!(m.add("get_lineno", py_fn!(get_lineno)));
     Ok(())
 });
 
@@ -107,4 +110,28 @@ fn get_sampler(obj: PyObject) -> Arc<Mutex<Sampler>> {
     let pyobj = obj.getattr("_sampler").unwrap();
     let r: PyRustObject<Arc<Mutex<Sampler>>, PyObject> = unsafe {PyRustObject::unchecked_downcast_from(pyobj) };
     r.get().clone()
+}
+
+#[no_mangle]
+pub extern fn get_lineno<'p>(py: Python<'p>, args: &PyTuple<'p>) ->  PyResult<'p, PyObject<'p>> {
+    let sys = py.import("sys").unwrap();
+    let frames_dict: PyDict = sys.call("_current_frames", NoArgs, None).unwrap().extract().unwrap();
+    let items = frames_dict.items();
+    let frame = items.into_iter().next();
+
+    match frame {
+        Some(x) => {
+            let tuple = unsafe {x.unchecked_cast_into::<PyTuple>()};
+            let key = tuple.get_item(0);
+    //        let value = tuple.get_item(1).unchecked_cast_into::<PyFrame>();
+            let value = tuple.get_item(1);
+
+            let f: PyFrame = value.extract().unwrap();
+            let lineno = f.get_lineno().clone();
+            Ok(lineno.to_py_object(py))
+        },
+        None => Ok(py.None())
+
+    }
+
 }

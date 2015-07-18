@@ -5,6 +5,7 @@ use std::cmp::Ordering;
 
 use callable::*;
 
+
 pub trait ThreadProcessor {
     fn thread_id(&mut self, key: String);
     fn frame_processor(&mut self) -> &mut FrameProcessor;
