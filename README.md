@@ -1,16 +1,15 @@
 # snakemeter
 
+Statistical [Python](https://www.python.org/) Profiler written in [Rust](http://www.rust-lang.org/)
 
-==Statistical Python Profiler written in Rust
-
-Usage:
+# Usage:
 
 1) build_release.sh
 2) python snakemeter.py <your_python_script>
 
 
-Limitation:
+# Limitations:
 
-Currently supports only Python 2.7.x
+Currently supports only CPython 2.7.x
 
 
