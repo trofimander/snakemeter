@@ -1,32 +1,51 @@
-use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
+ use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
     ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt};
 
 use std::cmp::Ordering;
+use std::ffi::{CStr, CString};
+use std::str;
 
 use callable::*;
 
 use libc::{c_int};
 use cpython::_detail::ffi;
 
-pub fn top_frames() -> Vec<i32> {
-    unsafe {
-        let mut v = Vec::<i32>::new();
-        let mut interpreter = ffi::PyInterpreterState_Head();
-        while !interpreter.is_null() {
-            let mut thread = ffi::PyInterpreterState_ThreadHead(interpreter);
-            while !thread.is_null() {
-                let frame = (*thread).frame;
+pub fn top_frames() -> Vec<(String, String, i32)> {
+    let gil = Python::acquire_gil();
+    let mut v = Vec::<(String, String, i32)>::new();
 
-                let lineno = ffi::PyFrame_GetLineNumber(frame);
+    let mut interpreter = unsafe { ffi::PyInterpreterState_Head() };
+    while !interpreter.is_null() {
+        let mut thread = unsafe { ffi::PyInterpreterState_ThreadHead(interpreter) };
+        while !thread.is_null() {
+            let frame = unsafe { (*thread).frame };
 
-                v.push(lineno);
+            if !frame.is_null() {
+                let lineno = unsafe { ffi::PyFrame_GetLineNumber(frame) } ;
 
-                thread = ffi::PyThreadState_Next(thread);
+                let code = unsafe { (*frame).f_code };
+
+                if !code.is_null() {
+                    let filename_obj = unsafe { ffi::PyString_AS_STRING((*code).co_filename) };
+
+                    let filename_c = unsafe { CString::from_ptr(filename_obj) } ;
+                   let filename = str::from_utf8(filename_c.to_bytes()).unwrap();
+
+                    let name_obj = unsafe { ffi::PyString_AS_STRING((*code).co_name) };
+
+                    let name_c = unsafe { CString::from_ptr(name_obj) };
+                   let name  = str::from_utf8(name_c.to_bytes()).unwrap();
+
+//                    v.push((String::from(filename), String::from(name), lineno));
+                    v.push((String::from(""), String::from(""), lineno));
+                }
             }
-            interpreter = ffi::PyInterpreterState_Next(interpreter);
+
+            thread = unsafe { ffi::PyThreadState_Next(thread) };
         }
-        v
+        interpreter = unsafe { ffi::PyInterpreterState_Next(interpreter) };
     }
+    v
 }
 
 
@@ -113,5 +132,15 @@ pub fn iterate_stacktrace(thread_proessor: &mut ThreadProcessor) {
                 }
                 top = false;
         }
+    }
+}
+
+pub fn iterate_stacktrace_fast(thread_proessor: &mut ThreadProcessor) {
+    let frames_processor = thread_proessor.frame_processor();
+
+    for (filename, name, lineno) in top_frames() {
+        let callable = Callable::new(filename, name, lineno);
+
+        frames_processor.process(&callable, SampleType::SelfSample);
     }
 }

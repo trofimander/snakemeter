@@ -1,6 +1,7 @@
 #![feature(libc)]
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
+#![feature(cstr_memory)]
 
 #[macro_use] extern crate cpython;
 
@@ -35,7 +36,7 @@ py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("start_sampling", py_fn!(start_sampling)));
     try!(m.add("stop_sampling", py_fn!(stop_sampling)));
     try!(m.add("get_sampling_stats", py_fn!(get_sampling_stats)));
-    try!(m.add("get_lineno", py_fn!(get_lineno)));
+    try!(m.add("get_top_frame", py_fn!(get_top_frame)));
     Ok(())
 });
 
@@ -114,7 +115,7 @@ fn get_sampler(obj: PyObject) -> Arc<Mutex<Sampler>> {
 }
 
 #[no_mangle]
-pub extern fn get_lineno<'p>(py: Python<'p>, args: &PyTuple<'p>) ->  PyResult<'p, PyObject<'p>> {
+pub extern fn get_top_frame<'p>(py: Python<'p>, args: &PyTuple<'p>) ->  PyResult<'p, PyObject<'p>> {
     let linenos = top_frames();
-    Ok((linenos[0] as usize).to_py_object(py))
+    Ok(linenos[0].to_py_object(py).into_object())
 }

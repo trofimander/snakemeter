@@ -76,7 +76,7 @@ class CallableStats(object):
         self.self_samples = self_count
         self.total_samples = total_samples
 
-        sample_ms = total_time / total_samples / 1000000.0
+        sample_ms = total_time / total_samples
 
         print(total_time)
         self.file = file
@@ -99,5 +99,5 @@ if __name__ == '__main__':
 
     del sys.argv[0]
 
-    sampler = Sampler()
+    sampler = Sampler(rate=100)
     sampler.run(file)

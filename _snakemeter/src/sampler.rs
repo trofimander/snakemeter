@@ -3,7 +3,8 @@ use callable::*;
 use mio::{EventLoop, Handler, EventLoopConfig};
 use clock_ticks::precise_time_ns as time_ns;
 
-use pyframe::{print_stacktrace, iterate_stacktrace, ThreadProcessor, FrameProcessor};
+use pyframe::{print_stacktrace, iterate_stacktrace, iterate_stacktrace_fast,
+ThreadProcessor, FrameProcessor};
 
 use std::thread;
 use std::sync::{Arc, Mutex};
@@ -75,10 +76,12 @@ impl Sampler {
     }
 
     pub fn sample(&mut self, now: u64) {
-          self.elapsed_time = self.elapsed_time + (now - self.timestamp);
+          let delta_ms = (now - self.timestamp)/1000000;
+          println!("{}", delta_ms);
+          self.elapsed_time = self.elapsed_time + delta_ms;
           self.samples_count = self.samples_count + 1;
 
-          iterate_stacktrace(self);
+          iterate_stacktrace_fast(self);
 //        print_stacktrace();
 
           self.timestamp = time_ns();
