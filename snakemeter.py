@@ -1,4 +1,20 @@
 import _snakemeter
+import os
+import sys
+
+def save_main_module(file, module_name):
+    sys.modules[module_name] = sys.modules['__main__']
+    sys.modules[module_name].__name__ = module_name
+    from imp import new_module
+
+    m = new_module('__main__')
+    sys.modules['__main__'] = m
+    if hasattr(sys.modules[module_name], '__loader__'):
+        setattr(m, '__loader__', getattr(sys.modules[module_name], '__loader__'))
+    m.__file__ = file
+
+    return m
+
 
 class Sampler(object):
     def __init__(self, rate=1000):
@@ -13,36 +29,75 @@ class Sampler(object):
     def reset(self):
         _snakemeter.reset_sampling(self)
 
-    def get_stats(self):
+    def _get_stats(self):
         return _snakemeter.get_sampling_stats(self)
 
-    def get_stats_as_pstats(self):
-        return convert_to_pstats
+    def print_stats(self):
+        Statistics(self._get_stats()).print_stats()
+
+    def run(self, filename):
+        m = save_main_module(file, 'run_profiler')
+        globals = m.__dict__
+        try:
+            globals['__builtins__'] = __builtins__
+        except NameError:
+            pass  # Not there on Jython...
+
+        self.start()
+
+        try:
+            exec(compile(open(filename, "rb").read(), filename, 'exec'), globals, None)
+        finally:
+            self.stop()
+            self.print_stats()
 
 
-def convert_to_pstats(stats):
-    from collections import defaultdict
+class Statistics(object):
+    def __init__(self, stats):
+        self.total_time = stats.total_time
+        self.samples_count = stats.samples_count
+        self.callable_stats = [CallableStats(path, name, line, cum_count, self_count, stats.total_time, stats.samples_count) for (path, name, line, cum_count, self_count) in stats.callable_stats]
 
-    import pstats
-    class _PStatHolder:
-        def __init__(self, d):
-            self.stats = d
-        def create_stats(self):
-            pass
+    def print_stats(self):
+        l = self.callable_stats[:]
+        l.sort(reverse=True, key=lambda x: x.total_ms)
 
-    def pstat_id(fs):
-        return (fs.module, fs.lineno, fs.name)
+        print ('%5.5s %10.10s   %7.7s  %30.30s  %8.8s' %
+                      ('%  ', 'total', 'self', 'callable', 'filename'))
+        print ('%5.5s  %9.9s  %8.8s  %8.8s  %-8.8s' %
+                      ('time', 'seconds', 'seconds', '', ''))
 
-    _pdict = {}
+        for x in l:
+            x.display()
 
-    # convert callees to callers
-    # _callers = defaultdict(dict)
-    # for fs in stats:
-    #     for ct in fs.children:
-    #         _callers[ct][pstat_id(fs)] = (ct.ncall, ct.nactualcall, ct.tsub ,ct.ttot)
 
-    # populate the pstat dict.
-    for (path, name, ) in stats.callable_stats:
-        _pdict[pstat_id(fs)] = (fs.ncall, fs.nactualcall, fs.tsub, fs.ttot, _callers[fs], )
+class CallableStats(object):
+    def __init__(self, file, name, line, cum_count, self_count, total_time, total_samples):
+        self.self_samples = self_count
+        self.total_samples = total_samples
 
-    return pstats.Stats(_PStatHolder(_pdict))
+        sample_ms = total_time / total_samples / 1000000.0
+
+        print(total_time)
+        self.file = file
+        self.filename = os.path.basename(file)
+        self.callable = name
+        self.line = line
+        self.name = "%s:%s" % (file, line)
+        self.percent = 1.0 * self_count / total_samples * 100
+        self.total_ms = (cum_count + self_count) * sample_ms
+        self.self_ms = self_count * sample_ms
+
+    def display(self):
+        print ('%6.2f %9.2f %9.2f  %30.30s  %s' % (self.percent,
+                                                 self.total_ms/1000.0,
+                                                 self.self_ms/1000.0,
+                                                 self.callable, self.name))
+
+if __name__ == '__main__':
+    file = sys.argv[1]
+
+    del sys.argv[0]
+
+    sampler = Sampler()
+    sampler.run(file)

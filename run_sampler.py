@@ -20,10 +20,7 @@ def run_sampling():
 
     sampler.stop()
 
-    print(sampler._sampler)
-
-    st = sampler.get_stats()
-    print(st.callable_stats)
+    sampler.print_stats()
 
 
 

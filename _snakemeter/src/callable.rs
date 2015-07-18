@@ -10,12 +10,13 @@ pub enum SampleType {
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub struct Callable {
     pub path: String,
-    pub name: String
+    pub name: String,
+    pub line: i32
 }
 
 impl Callable {
-    pub fn new(path: String, name: String) -> Callable {
-        Callable { path: path, name: name }
+    pub fn new(path: String, name: String, line: i32) -> Callable {
+        Callable { path: path, name: name, line: line }
     }
 }
 
@@ -80,13 +81,13 @@ impl CallableRegistry {
         self.id_counter
     }
 
-    pub fn as_tuples_list(&mut self) -> Vec<(String, String, u64, u64)> {
+    pub fn as_tuples_list(&mut self) -> Vec<(String, String, i32, u64, u64)> {
         let mut reg = self;
         let list = reg.callable_to_id.iter().map(
             |(callable, id)|
             {
                 let stat = reg.callable_stats.get(id).unwrap();
-                (callable.path.clone(), callable.name.clone(), stat.cumulative_count.clone(), stat.self_count.clone())
+                (callable.path.clone(), callable.name.clone(), callable.line, stat.cumulative_count.clone(), stat.self_count.clone())
             }
         );
         list.collect::<Vec<_>>()

@@ -74,7 +74,7 @@ impl Sampler {
         sampler
     }
 
-    pub fn sample(&mut self, now: u64) {    
+    pub fn sample(&mut self, now: u64) {
           self.elapsed_time = self.elapsed_time + (now - self.timestamp);
           self.samples_count = self.samples_count + 1;
 
@@ -99,7 +99,7 @@ impl Sampler {
 
 #[derive(Debug, Clone)]
 pub struct Stats {
-    pub callable_stats: Vec<(String, String, u64, u64)>,
+    pub callable_stats: Vec<(String, String, i32, u64, u64)>,
     pub total_time: u64,
     pub samples_count: u64
 }

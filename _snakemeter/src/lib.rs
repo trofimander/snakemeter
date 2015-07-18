@@ -92,7 +92,7 @@ pub fn get_sampling_stats<'p>(py: Python<'p>, args: &PyTuple<'p>) -> PyResult<'p
     let total_time = stats2.total_time;
     let samples_count = stats2.samples_count;
 
-    let list: &[(String, String, u64, u64)] = & *boxed_slice;
+    let list: &[(String, String, i32, u64, u64)] = & *boxed_slice;
     tb = PyRustTypeBuilder::add(tb, "callable_stats", list);
     tb = PyRustTypeBuilder::add(tb, "total_time", &total_time);
     tb = PyRustTypeBuilder::add(tb, "samples_count", &samples_count);
