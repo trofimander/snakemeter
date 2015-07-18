@@ -26,10 +26,8 @@ impl Handler for SamplingTimerHandler {
     type Message = ();
 
     fn timeout(&mut self, event_loop: &mut EventLoop<SamplingTimerHandler>, timeout: u64) {
-        let now = time_ns();
-
         let mut lock = self.sampler.lock().unwrap();
-        lock.sample(now);
+        lock.sample();
         if lock.run {
             // setup next timer
             event_loop.timeout_ms(timeout, timeout);
@@ -75,13 +73,16 @@ impl Sampler {
         sampler
     }
 
-    pub fn sample(&mut self, now: u64) {
-          let delta_ms = (now - self.timestamp)/1000000;
-          self.elapsed_time = self.elapsed_time + delta_ms;
+    pub fn sample(&mut self) {
           self.samples_count = self.samples_count + 1;
 
           iterate_stacktrace_fast(self);
 //        print_stacktrace();
+
+          let now = time_ns();
+          let delta_ms = (now - self.timestamp)/1000000;
+
+          self.elapsed_time = self.elapsed_time + delta_ms;
 
           self.timestamp = time_ns();
     }
