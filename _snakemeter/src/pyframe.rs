@@ -36,8 +36,8 @@ pub fn top_frames() -> Vec<(String, String, i32)> {
                     let name_c = unsafe { CString::from_ptr(name_obj) };
                    let name  = str::from_utf8(name_c.to_bytes()).unwrap();
 
-//                    v.push((String::from(filename), String::from(name), lineno));
-                    v.push((String::from(""), String::from(""), lineno));
+                    v.push((String::from(filename), String::from(name), lineno));
+//                    v.push((String::from(""), String::from(""), lineno));
                 }
             }
 

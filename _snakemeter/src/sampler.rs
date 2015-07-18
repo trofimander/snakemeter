@@ -77,7 +77,6 @@ impl Sampler {
 
     pub fn sample(&mut self, now: u64) {
           let delta_ms = (now - self.timestamp)/1000000;
-          println!("{}", delta_ms);
           self.elapsed_time = self.elapsed_time + delta_ms;
           self.samples_count = self.samples_count + 1;
 
