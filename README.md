@@ -2,13 +2,14 @@
 
 Statistical [Python](https://www.python.org/) Profiler written in [Rust](http://www.rust-lang.org/)
 
-# Command-line Usage:
+
+# Command-line Usage
 
   1) ./build_release.sh
 
   2) python snakemeter.py \<your_python_script\>
   
-# Program Usage:
+# Program Usage
 
 ```python
 
@@ -26,7 +27,7 @@ finally:
 ```
 
 
-# Limitations:
+# Limitations
 
 Currently supports only CPython 2.7.x
 
