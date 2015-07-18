@@ -14,7 +14,7 @@ mod pyframe;
 
 
 use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
-    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt, PyRustTypeBuilder, PyRustObject,
+    ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt, PyRustTypeBuilder, PyRustObject,
     PyErr};
 
 extern crate libc;
@@ -26,6 +26,7 @@ use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
 use sampler::{Sampler, Stats};
+use pyframe::top_frames;
 
 py_module_initializer!(_snakemeter, |_py, m| {
     try!(m.add("__doc__", "Module documentation string"));
@@ -114,24 +115,6 @@ fn get_sampler(obj: PyObject) -> Arc<Mutex<Sampler>> {
 
 #[no_mangle]
 pub extern fn get_lineno<'p>(py: Python<'p>, args: &PyTuple<'p>) ->  PyResult<'p, PyObject<'p>> {
-    let sys = py.import("sys").unwrap();
-    let frames_dict: PyDict = sys.call("_current_frames", NoArgs, None).unwrap().extract().unwrap();
-    let items = frames_dict.items();
-    let frame = items.into_iter().next();
-
-    match frame {
-        Some(x) => {
-            let tuple = unsafe {x.unchecked_cast_into::<PyTuple>()};
-            let key = tuple.get_item(0);
-    //        let value = tuple.get_item(1).unchecked_cast_into::<PyFrame>();
-            let value = tuple.get_item(1);
-
-            let f: PyFrame = value.extract().unwrap();
-            let lineno = f.get_lineno().clone();
-            Ok(lineno.to_py_object(py))
-        },
-        None => Ok(py.None())
-
-    }
-
+    let linenos = top_frames();
+    Ok((linenos[0] as usize).to_py_object(py))
 }

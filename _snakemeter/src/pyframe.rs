@@ -1,9 +1,34 @@
 use cpython::{PythonObject, Python, PyDict, NoArgs, PyTuple, PyString,
-    PyFrame, ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt};
+    ObjectProtocol, PyObject, PyResult, ToPyObject, PyInt};
 
 use std::cmp::Ordering;
 
 use callable::*;
+
+use libc::{c_int};
+use cpython::_detail::ffi;
+
+pub fn top_frames() -> Vec<i32> {
+    unsafe {
+        let mut v = Vec::<i32>::new();
+        let mut interpreter = ffi::PyInterpreterState_Head();
+        while !interpreter.is_null() {
+            let mut thread = ffi::PyInterpreterState_ThreadHead(interpreter);
+            while !thread.is_null() {
+                let frame = (*thread).frame;
+
+                let lineno = ffi::PyFrame_GetLineNumber(frame);
+
+                v.push(lineno);
+
+                thread = ffi::PyThreadState_Next(thread);
+            }
+            interpreter = ffi::PyInterpreterState_Next(interpreter);
+        }
+        v
+    }
+}
+
 
 
 pub trait ThreadProcessor {
